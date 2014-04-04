@@ -1,0 +1,8 @@
+{
+  "name": "fw_hole_poker",
+  "description": "firewall hole poker with password auth",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+  }
+}
