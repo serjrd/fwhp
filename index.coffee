@@ -28,14 +28,22 @@ https.createServer options, (req, res) ->
 				res.end '<!doctype html><html><head><title>413</title></head><body>413: Request Entity Too Large</body></html>'
 
 		req.on 'end', () ->
+			date = new Date(); date = "#{date.toDateString()} #{date.toTimeString().substr(0,8)}"
 			password = qs.parse(requestBody).password
 			if password == config.password
-				result = 1
+				result = 1 		# Correct!
+
+				# Report this attempt
+				console.log "#{date}: ALLOW #{ip} - granted access for #{config.time} minutes"
 
 				# Execute the firewall cmd:
-				exec config.cmd(ip)
+				exec config.cmd(ip), (error, stdout, stderr) ->
+					console.log "#{error}" if error
 			else
-				result = -1
+				result = -1 	# Wrong password is given
+
+				# Report this attempt
+				console.log "#{date}: REJECT #{ip} - wrong password"
 
 			res.end html.render(ip, result, config.time)
 
