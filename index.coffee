@@ -1,5 +1,6 @@
 #!/usr/bin/env coffee
 
+exec = require('child_process').exec
 https = require 'https'
 fs = require 'fs'
 qs = require 'querystring'
@@ -30,9 +31,12 @@ https.createServer options, (req, res) ->
 			password = qs.parse(requestBody).password
 			if password == config.password
 				result = 1
+
+				# Execute the firewall cmd:
+				exec config.cmd(ip)
 			else
 				result = -1
 
 			res.end html.render(ip, result, config.time)
 
-.listen(config.listen.port)
+.listen(config.listen.port, config.listen.ip)
