@@ -1,6 +1,6 @@
 #!/usr/bin/env coffee
 
-exec = require('child_process').exec
+cmd = require('./cmd.coffee').init()
 https = require 'https'
 fs = require 'fs'
 qs = require 'querystring'
@@ -34,16 +34,15 @@ https.createServer options, (req, res) ->
 				result = 1 		# Correct!
 
 				# Report this attempt
-				console.log "#{date}: ALLOW #{ip} - granted access for #{config.time} minutes"
+				console.log "#{date}: ALLOW #{ip} - Access granted for #{config.time} minutes"
 
 				# Execute the firewall cmd:
-				exec config.cmd(ip), (error, stdout, stderr) ->
-					console.log "#{error}" if error
+				cmd.allow(ip, config.time * 60)
 			else
 				result = -1 	# Wrong password is given
 
 				# Report this attempt
-				console.log "#{date}: REJECT #{ip} - wrong password"
+				console.log "#{date}: REJECT #{ip} - Wrong password"
 
 			res.end html.render(ip, result, config.time)
 
