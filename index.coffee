@@ -37,7 +37,7 @@ https.createServer options, (req, res) ->
 				console.log "#{date}: ALLOW #{ip} - Access granted for #{config.time} minutes"
 
 				# Execute the firewall cmd:
-				cmd.allow(ip, config.time * 60)
+				cmd.allow(ip, config.time)
 			else
 				result = -1 	# Wrong password is given
 
