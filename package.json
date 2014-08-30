@@ -1,8 +1,10 @@
 {
   "name": "fw_hole_poker",
-  "description": "firewall hole poker with password auth",
-  "version": "0.0.1",
-  "private": true,
+  "description": "Temporarily open firewall with web password authentication",
+  "version": "0.0.2",
+  "homepage": "https://github.com/serjrd/fw-hole-poker",
+  "repository": {"type": "git", "url": "https://github.com/serjrd/fw-hole-poker.git"},
+  "bin": {"fwhp": "./js/fwhp.js"},
   "dependencies": {
   }
 }

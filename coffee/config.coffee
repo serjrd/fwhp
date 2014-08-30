@@ -3,7 +3,7 @@
 Config =
 	listen:
 		ip: '0.0.0.0'
-		port: '8000'
+		port: '1000'
 	password: 'testing123'	# The password that grants you the access
 	time: 3000				# Time period in minutes for the temporary firewall rule to be active
 

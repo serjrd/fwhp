@@ -8,8 +8,8 @@ config = require './config.coffee'
 html = require './html.coffee'
 
 options =
-	key: fs.readFileSync('./key.pem')
-	cert: fs.readFileSync('./cert.pem')
+	key: fs.readFileSync('./ssl/key.pem')
+	cert: fs.readFileSync('./ssl/cert.pem')
 
 https.createServer options, (req, res) ->
 	ip = req.connection.remoteAddress
