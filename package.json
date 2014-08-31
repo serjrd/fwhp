@@ -3,8 +3,18 @@
   "description": "Temporarily open firewall with web password authentication",
   "version": "0.0.2",
   "homepage": "https://github.com/serjrd/fw-hole-poker",
-  "repository": {"type": "git", "url": "https://github.com/serjrd/fw-hole-poker.git"},
-  "bin": {"fwhp": "./js/fwhp.js"},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/serjrd/fw-hole-poker.git"
+  },
+  "bin": {
+    "fwhp": "./coffee/fwhp.coffee"
+  },
   "dependencies": {
+    "yargs": "^1.3.1"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-coffee": "^0.11.1"
   }
 }
