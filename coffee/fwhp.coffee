@@ -4,6 +4,7 @@ https = require 'https'
 fs = require 'fs'
 qs = require 'querystring'
 execFile = require('child_process').execFile
+Service = require('node-linux').Service
 argv = require 'yargs'
 		.default {i: '0.0.0.0', p: 1000, t: 300}
 		.alias {i: 'ip', p: 'port', s: 'secret', t: 'time', c: 'command'}
@@ -12,11 +13,23 @@ argv = require 'yargs'
 			p: 'TCP port to bind the HTTPS server to'
 			t: "Fire a \'deny\' action X minutes after the 'allow'. 0 to disable."
 			s: 'The secret password that we expect to grant access'
-			c: 'The external script that will be called to perform the actual allow/deny actions. See the ./cmd folder for examples.'
+			c: 'The external allow/deny script. See the ./cmd folder for examples.'
+			install: 'Install as a system service'
+			uninstall: 'Uninstall a system service'
 		.demand ['s','c']
+		.boolean ['install', 'uninstall']
 		.example "$0 -c ~/fw.sh -s T0Ps3cr3t", "Start the https server on 0.0.0.0:1000 (defaults) that expects 'T0Ps3cr3t' as a password. Upon successful authentication the '~/fw.sh' script will be called."
 		.argv
 
+
+svc = new Service
+	name:'fw-hole-poker'
+	description: 'Execute commands upon web authentication'
+	script: "./js/fwhp.js"
+
+svc.install() if argv.install
+svc.uninstall() if argv.uninstall
+	
 
 # Check if the external script is accessible:
 if !fs.existsSync argv.command
