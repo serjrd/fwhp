@@ -2,9 +2,10 @@
 
 https = require 'https'
 fs = require 'fs'
+path = require 'path'
 qs = require 'querystring'
 execFile = require('child_process').execFile
-Service = require('node-linux').Service
+util = require 'util'
 argv = require 'yargs'
 		.default {i: '0.0.0.0', p: 1000, t: 300}
 		.alias {i: 'ip', p: 'port', s: 'secret', t: 'time', c: 'command'}
@@ -16,25 +17,29 @@ argv = require 'yargs'
 			c: 'The external allow/deny script. See the ./cmd folder for examples.'
 			install: 'Install as a system service'
 			uninstall: 'Uninstall a system service'
-		.demand ['s','c']
+		# .demand ['s','c']
 		.boolean ['install', 'uninstall']
+		.check (argv) ->
+			# Check that we have the arguments we need
+			if !(argv.uninstall or (argv.s and argv.c))
+				return false
 		.example "$0 -c ~/fw.sh -s T0Ps3cr3t", "Start the https server on 0.0.0.0:1000 (defaults) that expects 'T0Ps3cr3t' as a password. Upon successful authentication the '~/fw.sh' script will be called."
 		.argv
 
-
-svc = new Service
-	name:'fw-hole-poker'
-	description: 'Execute commands upon web authentication'
-	script: "./js/fwhp.js"
-
-svc.install() if argv.install
-svc.uninstall() if argv.uninstall
-	
+# Ensure that the command path is absolute
+argv.command = path.resolve argv.command
 
 # Check if the external script is accessible:
 if !fs.existsSync argv.command
 	console.error "Error: unable to find '#{argv.command}'. Exitting.."
 	process.exit 1
+
+# Build a string of arguments:
+args_line = ''
+args_line += " -#{arg} #{argv[arg]}" for arg in ['i','p','t','s','c'] when argv[arg]
+
+console.log "args_line:#{args_line}"
+# process.exit(0)
 
 
 # Read the SSL key/cert files:
@@ -49,10 +54,9 @@ catch
 		Couldn't read the SSL key/cert files (./ssl/key.pem and ./ssl/cert.pem).
 		Here's a way to generate a self-signed certificate:
 
-		# cd ./ssl
-		# openssl genrsa -out key.pem 2048
-		# openssl req -new -x509 -key key.pem -out cert.pem -days 1095
-		# chmod 400 *.pem
+		# openssl genrsa -out ./ssl/key.pem 2048
+		# openssl req -new -x509 -key ./ssl/key.pem -out ./ssl/cert.pem -days 1095
+		# chmod 400 ./ssl/*.pem
 
 		"""
 	process.exit 1
