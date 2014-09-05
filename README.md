@@ -21,8 +21,11 @@ It's usually enough to provide a password and a script to call:
 ```
 or use config-file to tell fwhp what to do:
 ```
-./coffee/fwhp.coffee --config ./coffee/config.coffee >> /var/log/fwhp.log 2>&1 &
+./coffee/fwhp.coffee --config ./config/config.coffee >> /var/log/fwhp.log 2>&1 &
 ```
+
+You can use `fwhp` instead of `./coffee/fwhp.coffee` if you installed it globally with `npm i -g fwhp`.
+
 
 If you don't have coffeescript installed, use the js-version:
 ```
@@ -45,7 +48,7 @@ Options:
 You will need a node.js and npm packed manager to install it:
 
 ```
-npm install fwhp
+npm install -g fwhp
 ```
 
 If you don't have node.js installed on your system, here's how to do it (Ubuntu/Debian)
@@ -54,5 +57,4 @@ apt-get install nodejs npm
 ```
 
 ## Note
-The code was written in coffeescript and later compiled to js for those who has not yet fallen in love with coffee :)
-See .coffee files for code comments
+The code was written in coffeescript and later compiled to js for those who haven't yet fallen in love with coffee :)

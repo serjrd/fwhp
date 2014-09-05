@@ -9,7 +9,10 @@
     "url": "https://github.com/serjrd/fwhp.git"
   },
   "bin": {
-    "fwhp": "./js/fwhp.js"
+    "fwhp": "js/fwhp.js"
+  },
+  "scripts": {
+    "postinstall": "mkdir -p ~/fwhp/ssl; cp config/config.js ~/fwhp && chmod 600 ~/fwhp/*"
   },
   "dependencies": {
     "yargs": "^1.3.1"
