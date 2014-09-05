@@ -7,39 +7,46 @@ qs = require 'querystring'
 execFile = require('child_process').execFile
 util = require 'util'
 argv = require 'yargs'
-		.default {i: '0.0.0.0', p: 1000, t: 300}
-		.alias {i: 'ip', p: 'port', s: 'secret', t: 'time', c: 'command'}
+		.default {i: '0.0.0.0', p: 1000, t: 18000}
+		.alias {i: 'ip', p: 'port', s: 'secret', t: 'time', c: 'cmd'}
 		.describe 
 			i: 'IP address to bind the HTTPS server to'
 			p: 'TCP port to bind the HTTPS server to'
-			t: "Fire a \'deny\' action X minutes after the 'allow'. 0 to disable."
+			t: "Fire a \'deny\' action X seconds after the 'allow'. 0 to disable."
 			s: 'The secret password that we expect to grant access'
 			c: 'The external allow/deny script. See the ./cmd folder for examples.'
-			install: 'Install as a system service'
-			uninstall: 'Uninstall a system service'
-		# .demand ['s','c']
-		.boolean ['install', 'uninstall']
+			config: 'The file with the list of passwords and appropriate local commands.'
+		.string ['config', 's', 'c', 'i']
 		.check (argv) ->
 			# Check that we have the arguments we need
-			if !(argv.uninstall or (argv.s and argv.c))
+			if !(argv.config or (argv.s and argv.c))
 				return false
-		.example "$0 -c ~/fw.sh -s T0Ps3cr3t", "Start the https server on 0.0.0.0:1000 (defaults) that expects 'T0Ps3cr3t' as a password. Upon successful authentication the '~/fw.sh' script will be called."
 		.argv
 
-# Ensure that the command path is absolute
-argv.command = path.resolve argv.command
+confign = {}
 
-# Check if the external script is accessible:
-if !fs.existsSync argv.command
-	console.error "Error: unable to find '#{argv.command}'. Exitting.."
-	process.exit 1
+# Check if we need to parse an external config file:
+if argv.config 
+	# Ok, the config file parameter was provided. Try reading it:
+	try
+		config = require path.resolve argv.config
+	catch e
+		console.log "Error reading config file: [#{e}]"
+		process.exit 1
+else
+	# The parameters were passed as command-line arguments
+	# Make a config object of them
+	config[argv.secret] = cmd: argv.cmd
 
-# Build a string of arguments:
-args_line = ''
-args_line += " -#{arg} #{argv[arg]}" for arg in ['i','p','t','s','c'] when argv[arg]
+# Now let's check that we're happy with the config parameters that we were given:
+for password, entry of config
+	# Ensure that the command path is absolute
+	entry.cmd = path.resolve entry.cmd
 
-console.log "args_line:#{args_line}"
-# process.exit(0)
+	# Check if the external script is accessible:
+	if !fs.existsSync entry.cmd
+		console.error "Error: unable to find '#{entry.cmd}'. Exitting.."
+		process.exit 1
 
 
 # Read the SSL key/cert files:
@@ -68,22 +75,22 @@ allowed_ips = {}
 # They fire an external command with the following arguments:
 # 	'allow'/'deny'	- the action that should be performed
 #	IP				- the IP address that should be allowed/denied
-#	'[IP1, IP2...]'	- the string representation of the array of IP addresses that are currently allowed (useful if you need to rebuild the whole access rules)
 cmd =
 	# This method is called upon successful authentication
-	allow: (ip) ->
-		if argv.time
+	allow: (ip, config) ->
+		if argv.time or config.time
+			time = if config.time then config.time else argv.time
 			clearTimeout allowed_ips[ip] if allowed_ips[ip]?
-			allowed_ips[ip] = setTimeout @deny, argv.time * 60000, ip
-		execFile argv.command, ['allow', ip, "[#{Object.keys allowed_ips}]"], (error, stdout, stderr) ->
+			allowed_ips[ip] = setTimeout @deny, time * 60000, [ip, config]
+		execFile config.cmd, ['allow', ip, config.arg], (error, stdout, stderr) ->
 				console.log "#{error}" if error
 				console.log "#{stdout}" if stdout
 
-	deny: (ip) ->
+	deny: (ip, config) ->
 		if allowed_ips[ip]?
 			clearTimeout allowed_ips[ip]
 			delete allowed_ips[ip]
-		execFile argv.command, ['deny', ip, "[#{Object.keys allowed_ips}]"], (error, stdout, stderr) ->
+		execFile config.cmd, ['deny', ip, config.arg], (error, stdout, stderr) ->
 				console.log "#{error}" if error
 
 
@@ -165,15 +172,14 @@ https.createServer options, (req, res) ->
 		req.on 'end', () ->
 			date = new Date(); date = "#{date.toDateString()} #{date.toTimeString().substr(0,8)}"
 			password = qs.parse(requestBody).password
-			# if password == config.password
-			if password == argv.s
+			if password of config
 				result = true 		# Correct!
 
 				# Report this attempt
-				console.log "#{date}: ALLOW #{ip} - Access granted for #{argv.time} minutes"
+				console.log "#{date}: ALLOW #{ip} - Access granted for #{argv.time} seconds"
 
 				# Execute the firewall cmd:
-				cmd.allow(ip)
+				cmd.allow(ip, config[password])
 			else
 				result = false 		# Wrong password is given
 

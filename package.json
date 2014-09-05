@@ -1,11 +1,11 @@
 {
-  "name": "fw_hole_poker",
-  "description": "Temporarily open firewall with web password authentication",
-  "version": "0.0.2",
-  "homepage": "https://github.com/serjrd/fw-hole-poker",
+  "name": "fwhp",
+  "description": "Grant temp firewall access (or run other actions locally) through web authentication",
+  "version": "0.0.3",
+  "homepage": "https://github.com/serjrd/fwhp",
   "repository": {
     "type": "git",
-    "url": "https://github.com/serjrd/fw-hole-poker.git"
+    "url": "https://github.com/serjrd/fwhp.git"
   },
   "bin": {
     "fwhp": "./coffee/fwhp.coffee"
