@@ -7,6 +7,6 @@ module.exports =
 		time: 18000 					# time in seconds after which the 'deny' action is called
 		arg: 'trusted'					# An optional argument that may be passed to that CMD in addition to the standard ones
 										# e.g.: ipset set name, port number
-	# 'password2':
-	# 	cmd: '/path/to/cmd'
-	# 	arg: '222'
+	'password2':
+		cmd: './cmd/iptables.js'
+		arg: '2222'

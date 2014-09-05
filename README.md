@@ -13,24 +13,20 @@ Upon successful authentication it executes a given script that can do anything y
 It's really easy to configure. Just give it a password and a script to execute.
 Sample scripts are provided with the app (see the ./cmd folder)
 
-
-## How to install
-You will need a node.js and npm packed manager to install it:
-
-```
-git clone https://github.com/serjrd/fwhp.git fwhp
-cd fwhp && npm install
-```
-
 ## Usage:
 It's usually enough to provide a password and a script to call:
 
 ```
-./coffee/fwhp.js -s PASSWORD -c ./cmd/iptables.sh >> /var/log/fwhp.log 2>&1 &
+./coffee/fwhp.coffee -s PASSWORD -c ./cmd/iptables.sh >> /var/log/fwhp.log 2>&1 &
 ```
-or
+or use config-file to tell fwhp what to do:
 ```
-node ./js/fwhp.js -s PASSWORD -c ./cmd/iptables.sh >> /var/log/fwhp.log 2>&1 &
+./coffee/fwhp.coffee --config ./coffee/config.coffee >> /var/log/fwhp.log 2>&1 &
+```
+
+If you don't have coffeescript installed, use the js-version:
+```
+./js/fwhp.js -s PASSWORD -c ./cmd/iptables.sh >> /var/log/fwhp.log 2>&1 &
 ```
 
 Run it without arguments to see all available options:
@@ -44,3 +40,19 @@ Options:
   -c, --cmd     The external allow/deny script. See the ./cmd folder for examples. 
   --config      The file with the list of passwords and appropriate local commands.
 ```
+
+## Installation
+You will need a node.js and npm packed manager to install it:
+
+```
+npm install fwhp
+```
+
+If you don't have node.js installed on your system, here's how to do it (Ubuntu/Debian)
+```
+apt-get install nodejs npm
+```
+
+## Note
+The code was written in coffeescript and later compiled to js for those who has not yet fallen in love with coffee :)
+See .coffee files for code comments
