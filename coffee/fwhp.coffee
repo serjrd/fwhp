@@ -7,15 +7,16 @@ qs = require 'querystring'
 execFile = require('child_process').execFile
 util = require 'util'
 argv = require 'yargs'
-		.default {i: '0.0.0.0', p: 1000, t: 18000}
+		.default {i: '0.0.0.0', p: 1000, t: 18000, ssl: '/etc/fwhp/ssl'}
 		.alias {i: 'ip', p: 'port', s: 'secret', t: 'time', c: 'cmd'}
 		.describe 
+			config: 'The main config file.'
+			ssl: 'Path to SSL key/cert folder'
 			i: 'IP address to bind the HTTPS server to'
 			p: 'TCP port to bind the HTTPS server to'
 			t: "Fire a \'deny\' action X seconds after the 'allow'. 0 to disable."
 			s: 'The secret password that we expect to grant access'
 			c: 'The external allow/deny script. See the ./cmd folder for examples.'
-			config: 'The file with the list of passwords and appropriate local commands.'
 		.string ['config', 's', 'c', 'i']
 		.check (argv) ->
 			# Check that we have the arguments we need
@@ -36,12 +37,21 @@ if argv.config
 else
 	# The parameters were passed as command-line arguments
 	# Make a config object of them
-	config[argv.secret] = cmd: argv.cmd
+	config.general = {}
+	for param in ['ip', 'port', 'time', 'ssl']
+		config.general[param] = argv[param]
+
+	config['passwords'] = {}
+	config['passwords'][argv.secret] = cmd: argv.cmd
 
 # Now let's check that we're happy with the config parameters that we were given:
-for password, entry of config
+for password, entry of config.passwords
 	# Ensure that the command path is absolute
-	entry.cmd = path.resolve entry.cmd
+	try
+		entry.cmd = path.resolve entry.cmd
+	catch e
+		console.error "Error: unable to find '#{entry.cmd}'. Exitting.."
+		process.exit 1
 
 	# Check if the external script is accessible:
 	if !fs.existsSync entry.cmd
@@ -52,18 +62,18 @@ for password, entry of config
 # Read the SSL key/cert files:
 try
 	options =
-		key: fs.readFileSync('./ssl/key.pem')
-		cert: fs.readFileSync('./ssl/cert.pem')
+		key: fs.readFileSync("#{config.general.ssl}/key.pem")
+		cert: fs.readFileSync("#{config.general.ssl}/cert.pem")
 catch
 	console.error """
 
 		Oops..!
-		Couldn't read the SSL key/cert files (./ssl/key.pem and ./ssl/cert.pem).
+		Couldn't read the SSL key/cert files (#{config.general.ssl}/key.pem and #{config.general.ssl}/cert.pem).
 		Here's a way to generate a self-signed certificate:
 
-		# openssl genrsa -out ./ssl/key.pem 2048
-		# openssl req -new -x509 -key ./ssl/key.pem -out ./ssl/cert.pem -days 1095
-		# chmod 400 ./ssl/*.pem
+		# openssl genrsa -out #{config.general.ssl}/key.pem 2048
+		# openssl req -new -x509 -key #{config.general.ssl}/key.pem -out #{config.general.ssl}/cert.pem -days 1095
+		# chmod 400 #{config.general.ssl}/*.pem
 
 		"""
 	process.exit 1
@@ -77,26 +87,26 @@ allowed_ips = {}
 #	IP				- the IP address that should be allowed/denied
 cmd =
 	# This method is called upon successful authentication
-	allow: (ip, config) ->
-		if argv.time or config.time
-			time = if config.time then config.time else argv.time
+	allow: (ip, params) ->
+		time = if params.time? then params.time else config.general.time
+		if time
 			clearTimeout allowed_ips[ip] if allowed_ips[ip]?
-			allowed_ips[ip] = setTimeout @deny, time * 60000, [ip, config]
-		execFile config.cmd, ['allow', ip, config.arg], (error, stdout, stderr) ->
+			allowed_ips[ip] = setTimeout @deny, time * 60000, [ip, params]
+		execFile params.cmd, ['allow', ip, params.arg], (error, stdout, stderr) ->
 				console.log "#{error}" if error
 				console.log "#{stdout}" if stdout
 
-	deny: (ip, config) ->
+	deny: (ip, params) ->
 		if allowed_ips[ip]?
 			clearTimeout allowed_ips[ip]
 			delete allowed_ips[ip]
-		execFile config.cmd, ['deny', ip, config.arg], (error, stdout, stderr) ->
+		execFile params.cmd, ['deny', ip, params.arg], (error, stdout, stderr) ->
 				console.log "#{error}" if error
 
 
 # The function to generate some HTML for our web server
 html =
-	render: (ip, result) ->
+	render: (ip, result, time) ->
 		if !result?
 			# No password provided. Show initial password form
 			body = """
@@ -108,9 +118,9 @@ html =
 					"""
 		else if result
 			# Success
-			if argv.time
+			if time
 				body = """
-								<div class='success'>Success! IP [<span id='ip'>#{ip}</span>] is allowed for #{argv.time} minutes.</div>
+								<div class='success'>Success! IP [<span id='ip'>#{ip}</span>] is allowed for #{time} minutes.</div>
 						"""
 			else
 				body = """
@@ -172,14 +182,17 @@ https.createServer options, (req, res) ->
 		req.on 'end', () ->
 			date = new Date(); date = "#{date.toDateString()} #{date.toTimeString().substr(0,8)}"
 			password = qs.parse(requestBody).password
-			if password of config
+			time = null
+			if password of config.passwords
 				result = true 		# Correct!
+				params = config['passwords'][password]
+				time = if params['time']? then params['time'] else config.general.time
 
 				# Report this attempt
-				console.log "#{date}: ALLOW #{ip} - Access granted for #{argv.time} seconds"
+				console.log "#{date}: ALLOW #{ip} - Access granted for #{time} seconds"
 
 				# Execute the firewall cmd:
-				cmd.allow(ip, config[password])
+				cmd.allow(ip, params)
 			else
 				result = false 		# Wrong password is given
 
@@ -188,6 +201,6 @@ https.createServer options, (req, res) ->
 
 			res.end html.render(ip, result)
 
-.listen(argv.port, argv.ip)
+.listen(config.general.port, config.general.ip)
 
-console.log "FWHP starter. Listening on #{argv.ip}:#{argv.port}..."
+console.log "FWHP starter. Listening on #{config.general.ip}:#{config.general.port}..."
