@@ -10,8 +10,8 @@ module.exports = {
 		// This section defines the valid passwords and the actions to take upon successful authentification with that password
 		'password1': {
 			cmd: '/etc/fwhp/cmd/iptables.js',	// the local script to run upon successful authentication
-			time: 18000,						// redefine the default time
-			arg: 'trusted'						// An optional argument that may be passed to that CMD in addition to the standard ones (e.g.: ipset set name, port number)
+			time: 18000,											// redefine the default time
+			arg: 'trusted'										// An optional argument that may be passed to that CMD in addition to the standard ones (e.g.: ipset set name, port number)
 		},
 		'password2': {
 			cmd: '/etc/fwhp/cmd/iptables.js',
