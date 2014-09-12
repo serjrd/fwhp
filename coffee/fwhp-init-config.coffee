@@ -3,6 +3,8 @@
 # This script will install config file where the user wants them
 
 inquirer = require 'inquirer'
+path = require 'path'
+fs = require 'fs'
 exec = require('child_process').exec
 spawn = require('child_process').spawn
 
@@ -18,9 +20,13 @@ questions = [
 		default: true
 ]
 
+# Resolve the path to the module's folder that was created by npm
+# Currently it will follow the symlink of that binary file
+conf_path = path.resolve process.argv[1], '..', fs.readlinkSync(process.argv[1]), '../../config'
+
 inquirer.prompt questions, (res) ->
 	console.log "Installing config to #{res.path}..."
-	exec "mkdir -p #{res.path}; cp -r config/* #{res.path} && chmod 600 #{res.path}/config.js", (err) ->
+	exec "mkdir -p #{res.path}; cp -r #{conf_path}/* #{res.path} && chmod 600 #{res.path}/config.js", (err) ->
 		if err
 			console.log "#{err}"
 			process.exit 1
