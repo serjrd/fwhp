@@ -39,10 +39,13 @@ Options:
 You will need a node.js and npm packed manager to install it:
 
 ```
-npm install -g fwhp
-fwhp-init
+sudo npm install -g fwhp
+sudo fwhp-init-config
 ```
-`fwhp-init` will install default config file and sample scripts and optionally generate you a self-signed SSL certificate
+Running `fwhp-init-config` is optional. It will:
+- install the sample config file
+- install sample script files 
+- optionally generate you a self-signed SSL certificate (needed for running HTTPS server)
 
 If you don't have node.js installed on your system, here's how to do it (Ubuntu/Debian)
 ```
