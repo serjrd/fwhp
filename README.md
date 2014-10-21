@@ -51,9 +51,6 @@ exec = require('child_process').exec;
 // parse the arguments
 _ref = process.argv.slice(2), action = _ref[0], ip = _ref[1], set = _ref[2];
 
-// log this event
-exec("echo `date +'%F %T:'` '" + action + " " + ip + " " + set + "' >> /var/log/fwhp.log");
-
 // make something useful
 switch (action) {
 	case 'allow':
@@ -69,9 +66,8 @@ switch (action) {
 
 ## Usage:
 ```
-fwhp /etc/fwhp/config.js
+sudo fwhp-start /etc/fwhp/config.js
 ```
-fwhp /etc/fwhp/config.js >> /var/log/fwhp.log 2>&1 &
 
 ## Installation
 You will need a node.js and npm packed manager to install it:
