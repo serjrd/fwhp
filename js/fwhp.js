@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var allowed_ips, argv, cmd, config, confign, e, entry, execFile, fs, html, https, options, param, password, path, qs, util, _i, _len, _ref, _ref1;
+var allowed_ips, cmd, config, configFile, e, entry, execFile, fs, html, https, options, password, path, qs, util, _ref;
 
 https = require('https');
 
@@ -14,57 +14,18 @@ execFile = require('child_process').execFile;
 
 util = require('util');
 
-argv = require('yargs')["default"]({
-  i: '0.0.0.0',
-  p: 1000,
-  t: 18000,
-  ssl: '/etc/fwhp/ssl'
-}).alias({
-  i: 'ip',
-  p: 'port',
-  s: 'secret',
-  t: 'time',
-  c: 'cmd'
-}).describe({
-  config: 'The main config file.',
-  ssl: 'Path to SSL key/cert folder',
-  i: 'IP address to bind the HTTPS server to',
-  p: 'TCP port to bind the HTTPS server to',
-  t: "Fire a \'deny\' action X seconds after the 'allow'. 0 to disable.",
-  s: 'The secret password that we expect to grant access',
-  c: 'The external allow/deny script. See the ./cmd folder for examples.'
-}).string(['config', 's', 'c', 'i']).check(function(argv) {
-  if (!(argv.config || (argv.s && argv.c))) {
-    return false;
-  }
-}).argv;
-
-confign = {};
-
-if (argv.config) {
-  try {
-    config = require(path.resolve(argv.config));
-  } catch (_error) {
-    e = _error;
-    console.log("Error reading config file: [" + e + "]");
-    process.exit(1);
-  }
-} else {
-  config.general = {};
-  _ref = ['ip', 'port', 'time', 'ssl'];
-  for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-    param = _ref[_i];
-    config.general[param] = argv[param];
-  }
-  config['passwords'] = {};
-  config['passwords'][argv.secret] = {
-    cmd: argv.cmd
-  };
+try {
+  configFile = process.argv[2];
+  config = require(path.resolve(configFile));
+} catch (_error) {
+  e = _error;
+  console.log("Error reading config file: [" + e + "]");
+  process.exit(1);
 }
 
-_ref1 = config.passwords;
-for (password in _ref1) {
-  entry = _ref1[password];
+_ref = config.passwords;
+for (password in _ref) {
+  entry = _ref[password];
   try {
     entry.cmd = path.resolve(entry.cmd);
   } catch (_error) {
@@ -88,12 +49,20 @@ try {
   process.exit(1);
 }
 
+
+/*
+The methods that call the external script
+They fire an external command with the following arguments:
+	'allow'/'deny'	- the action that should be performed
+	IP							- the IP address that should be allowed/denied
+ */
+
 allowed_ips = {};
 
 cmd = {
   allow: function(ip, params) {
     var time;
-    time = params.time != null ? params.time : config.general.time;
+    time = params.time || config.general.time;
     if (time) {
       if (allowed_ips[ip] != null) {
         clearTimeout(allowed_ips[ip]);

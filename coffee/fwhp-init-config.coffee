@@ -43,7 +43,13 @@ inquirer.prompt questions, (res) ->
 						cert.on 'close', (code) ->
 							if code == 0
 								exec "chmod -R 600 #{res.path}/ssl/*.pem", ->
-									console.log "DONE!"
+									console.log """
+									DONE!
+									You may now run:
+
+									fwhp-start #{res.path}/config.js
+									
+									"""
 							else
 								console.log "Generating canceled. Exiting."
 								process.exit 1

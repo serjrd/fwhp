@@ -1,11 +1,12 @@
 #!/usr/bin/env coffee
 
-# Exmaple of coffeescript file to perform desired allow/deny actions
+###
+Exmaple of coffeescript file to perform desired allow/deny actions
 
-# argv[2] - action ('allow'/'deny')
-# argv[3] - IP
-# argv[4] - optional parameter described in the config file
-
+argv[2] - action ('allow'/'deny')
+argv[3] - IP
+argv[4] - optional parameter described in the config file
+###
 exec = require('child_process').exec
 
 [action, ip, set] = process.argv[2..]

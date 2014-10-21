@@ -49,7 +49,7 @@ inquirer.prompt(questions, function(res) {
             return cert.on('close', function(code) {
               if (code === 0) {
                 return exec("chmod -R 600 " + res.path + "/ssl/*.pem", function() {
-                  return console.log("DONE!");
+                  return console.log("DONE!\nYou may now run:\n\nfwhp-start " + res.path + "/config.js\n");
                 });
               } else {
                 console.log("Generating canceled. Exiting.");

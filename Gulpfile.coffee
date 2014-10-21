@@ -4,7 +4,7 @@ header = require 'gulp-header'
 
 gulp.task 'build', ->
  	gulp.src 'coffee/*.coffee'
- 		.pipe coffee(bare: true)
+ 		.pipe coffee bare: true
  		.pipe header "#!/usr/bin/env node\n\n"
  		.pipe gulp.dest 'js/'
 

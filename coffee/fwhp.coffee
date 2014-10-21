@@ -6,43 +6,14 @@ path = require 'path'
 qs = require 'querystring'
 execFile = require('child_process').execFile
 util = require 'util'
-argv = require 'yargs'
-		.default {i: '0.0.0.0', p: 1000, t: 18000, ssl: '/etc/fwhp/ssl'}
-		.alias {i: 'ip', p: 'port', s: 'secret', t: 'time', c: 'cmd'}
-		.describe 
-			config: 'The main config file.'
-			ssl: 'Path to SSL key/cert folder'
-			i: 'IP address to bind the HTTPS server to'
-			p: 'TCP port to bind the HTTPS server to'
-			t: "Fire a \'deny\' action X seconds after the 'allow'. 0 to disable."
-			s: 'The secret password that we expect to grant access'
-			c: 'The external allow/deny script. See the ./cmd folder for examples.'
-		.string ['config', 's', 'c', 'i']
-		.check (argv) ->
-			# Check that we have the arguments we need
-			if !(argv.config or (argv.s and argv.c))
-				return false
-		.argv
 
-confign = {}
-
-# Check if we need to parse an external config file:
-if argv.config 
-	# Ok, the config file parameter was provided. Try reading it:
-	try
-		config = require path.resolve argv.config
-	catch e
-		console.log "Error reading config file: [#{e}]"
-		process.exit 1
-else
-	# The parameters were passed as command-line arguments
-	# Make a config object of them
-	config.general = {}
-	for param in ['ip', 'port', 'time', 'ssl']
-		config.general[param] = argv[param]
-
-	config['passwords'] = {}
-	config['passwords'][argv.secret] = cmd: argv.cmd
+# Try to read config file:
+try
+	configFile = process.argv[2]
+	config = require path.resolve configFile
+catch e
+	console.log "Error reading config file: [#{e}]"
+	process.exit 1
 
 # Now let's check that we're happy with the config parameters that we were given:
 for password, entry of config.passwords
@@ -79,27 +50,35 @@ catch
 	process.exit 1
 
 
-allowed_ips = {}
 
-# The methods that call the external script
-# They fire an external command with the following arguments:
-# 	'allow'/'deny'	- the action that should be performed
-#	IP				- the IP address that should be allowed/denied
+###
+The methods that call the external script
+They fire an external command with the following arguments:
+	'allow'/'deny'	- the action that should be performed
+	IP							- the IP address that should be allowed/denied
+###
+allowed_ips = {}
 cmd =
 	# This method is called upon successful authentication
 	allow: (ip, params) ->
-		time = if params.time? then params.time else config.general.time
+		time = params.time or config.general.time
+
 		if time
+			# Schedule the 'deny' action
 			clearTimeout allowed_ips[ip] if allowed_ips[ip]?
 			allowed_ips[ip] = setTimeout @deny, time * 60000, [ip, params]
+
+		# Execute the external command
 		execFile params.cmd, ['allow', ip, params.arg], (error, stdout, stderr) ->
 				console.log "#{error}" if error
 				console.log "#{stdout}" if stdout
 
+	# This method is optionally called some time after the 'allow'
 	deny: (ip, params) ->
 		if allowed_ips[ip]?
 			clearTimeout allowed_ips[ip]
 			delete allowed_ips[ip]
+	
 		execFile params.cmd, ['deny', ip, params.arg], (error, stdout, stderr) ->
 				console.log "#{error}" if error
 

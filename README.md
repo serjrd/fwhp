@@ -7,33 +7,71 @@ This might come in handy when you need to connect to your firewall-protected ser
 For example, if you're on vacation.
 
 ## How it works
-It starts a native node.js HTTPS server and expects a password.
-Upon successful authentication it executes a given script that can do anything you want (e.g. add some firewall rules to temporarily grant access to that IP address)
+- You tell fwhp what script/command to execute upon successful authentication (e.g. add some firewall rules to temporarily grant access to that IP address).
+- fwhp starts a native node.js HTTPS server and waits for a correct password.
+- When it gets a correct password it executes your command as follows: `/your/script allow <IP> [<optional arguments you configured>]`
+- After the time you configured it runs the same script as follows: `/your/script deny <IP> [<optional arguments you configured>]`
 
-It's really easy to configure. Just give it a password and a script to execute.
-Sample scripts are provided with the app (see the `config/cmd` folder)
+## Config
+If you want - you can have several passwords that trigger different actions.
+Here's a sample config file:
+
+```javascript
+module.exports = {
+	general: {
+		ip: '0.0.0.0',						// IP that FWHP should listen on
+		port: 1000,								// TCP port to bind to
+		time: 18000,							// default time in seconds after which the 'deny' action is called
+		ssl: '/etc/fwhp/ssl',			// the folder with SSL cert.pem and key.pem files
+		log: '/var/log/fwhp.log'
+	},
+	passwords: {
+		// This section defines the valid passwords and the actions to take upon successful authentification with that password
+		'password1': {
+			cmd: '/etc/fwhp/cmd/iptables.js',	// the local script to run upon successful authentication
+			time: 18000,											// redefine the default time
+			arg: 'trusted'										// An optional argument that may be passed to that CMD in addition to the standard ones (e.g.: ipset set name, port number)
+		},
+		'password2': {
+			cmd: '/etc/fwhp/cmd/iptables.js',
+			arg: '2222'
+		}
+	}
+};
+```
+
+## Scripts
+Sample scripts are provided with the app (see the `config/cmd` folder).
+Here's an example of what your script may look like:
+
+```javascript
+var action, exec, ip, set, _ref;
+exec = require('child_process').exec;
+
+// parse the arguments
+_ref = process.argv.slice(2), action = _ref[0], ip = _ref[1], set = _ref[2];
+
+// log this event
+exec("echo `date +'%F %T:'` '" + action + " " + ip + " " + set + "' >> /var/log/fwhp.log");
+
+// make something useful
+switch (action) {
+	case 'allow':
+		exec("ipset add " + set + " " + ip);
+		break;
+	case 'deny':
+		exec("ipset del " + set + " " + ip);
+		break;
+	default:
+		console.log("Wrong action provided");
+}
+```
 
 ## Usage:
 ```
-fwhp --config /etc/fwhp/config.js >> /var/log/fwhp.log 2>&1 &
+fwhp /etc/fwhp/config.js
 ```
-
-Or run it with command-line arguments:
-```
-fwhp -s PASSWORD -c /etc/fwhp/cmd/iptables.js >> /var/log/fwhp.log 2>&1 &
-```
-
-Run it without arguments to see all available options:
-```
-Options:
-  --config      The main config file.                                             
-  --ssl         Path to SSL key/cert folder                                         [default: "/etc/fwhp/ssl"]
-  -i, --ip      IP address to bind the HTTPS server to                              [default: "0.0.0.0"]
-  -p, --port    TCP port to bind the HTTPS server to                                [default: 1000]
-  -t, --time    Fire a 'deny' action X seconds after the 'allow'. 0 to disable.     [default: 18000]
-  -s, --secret  The secret password that we expect to grant access                
-  -c, --cmd     The external allow/deny script. See the ./cmd folder for examples.
-```
+fwhp /etc/fwhp/config.js >> /var/log/fwhp.log 2>&1 &
 
 ## Installation
 You will need a node.js and npm packed manager to install it:
@@ -49,5 +87,5 @@ Running `fwhp-init-config` is optional. It will:
 
 If you don't have node.js installed on your system, here's how to do it (Ubuntu/Debian)
 ```
-apt-get install nodejs npm
+sudo apt-get install nodejs npm
 ```
