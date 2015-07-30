@@ -43,7 +43,7 @@ inquirer.prompt(questions, function(res) {
             console.log("" + err);
             return process.exit(1);
           } else {
-            cert = spawn("openssl", ['req', '-new', '-x509', '-key', "" + res.path + "/ssl/key.pem", '-out', "" + res.path + "/ssl/cert.pem", '-days', '1095'], {
+            cert = spawn("openssl", ['req', '-new', '-x509', '-key', res.path + "/ssl/key.pem", '-out', res.path + "/ssl/cert.pem", '-days', '1095'], {
               stdio: 'inherit'
             });
             return cert.on('close', function(code) {

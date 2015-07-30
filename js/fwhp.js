@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var allowed_ips, cmd, config, configFile, e, entry, execFile, fs, html, https, options, password, path, qs, util, _ref;
+var allowed_ips, cmd, config, configFile, e, entry, execFile, fs, html, https, options, password, path, qs, ref, util;
 
 https = require('https');
 
@@ -23,9 +23,9 @@ try {
   process.exit(1);
 }
 
-_ref = config.passwords;
-for (password in _ref) {
-  entry = _ref[password];
+ref = config.passwords;
+for (password in ref) {
+  entry = ref[password];
   try {
     entry.cmd = path.resolve(entry.cmd);
   } catch (_error) {
@@ -41,8 +41,8 @@ for (password in _ref) {
 
 try {
   options = {
-    key: fs.readFileSync("" + config.general.ssl + "/key.pem"),
-    cert: fs.readFileSync("" + config.general.ssl + "/cert.pem")
+    key: fs.readFileSync(config.general.ssl + "/key.pem"),
+    cert: fs.readFileSync(config.general.ssl + "/cert.pem")
   };
 } catch (_error) {
   console.error("\nOops..!\nCouldn't read the SSL key/cert files (" + config.general.ssl + "/key.pem and " + config.general.ssl + "/cert.pem).\nHere's a way to generate a self-signed certificate:\n\n# openssl genrsa -out " + config.general.ssl + "/key.pem 2048\n# openssl req -new -x509 -key " + config.general.ssl + "/key.pem -out " + config.general.ssl + "/cert.pem -days 1095\n# chmod 400 " + config.general.ssl + "/*.pem\n");
@@ -129,18 +129,18 @@ https.createServer(options, function(req, res) {
     return req.on('end', function() {
       var date, params, result, time;
       date = new Date();
-      date = "" + (date.toDateString()) + " " + (date.toTimeString().substr(0, 8));
+      date = (date.toDateString()) + " " + (date.toTimeString().substr(0, 8));
       password = qs.parse(requestBody).password;
       time = null;
       if (password in config.passwords) {
         result = true;
         params = config['passwords'][password];
         time = params['time'] != null ? params['time'] : config.general.time;
-        console.log("" + date + ": ALLOW " + ip + " - Access granted for " + time + " seconds");
+        console.log(date + ": ALLOW " + ip + " - Access granted for " + time + " seconds");
         cmd.allow(ip, params);
       } else {
         result = false;
-        console.log("" + date + ": REJECT " + ip + " - Wrong password");
+        console.log(date + ": REJECT " + ip + " - Wrong password");
       }
       return res.end(html.render(ip, result));
     });
