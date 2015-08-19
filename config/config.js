@@ -2,7 +2,7 @@ module.exports = {
 	general: {
 		ip: '0.0.0.0',						// IP that FWHP should listen on
 		port: 10000,							// TCP port to bind to
-		time: 18000,							// default time in seconds after which the 'deny' action is called
+		time: 300,								// default time in minutes after which the 'deny' action is called
 		ssl: '/etc/fwhp/ssl',			// the folder with SSL cert.pem and key.pem files
 		log: '/var/log/fwhp.log'
 	},

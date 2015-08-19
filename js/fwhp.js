@@ -67,9 +67,13 @@ cmd = {
       if (allowed_ips[ip] != null) {
         clearTimeout(allowed_ips[ip]);
       }
-      allowed_ips[ip] = setTimeout(this.deny, time * 60000, [ip, params]);
+      allowed_ips[ip] = setTimeout(this.deny, time * 1000, ip, params);
     }
     return execFile(params.cmd, ['allow', ip, params.arg], function(error, stdout, stderr) {
+      var date;
+      date = new Date();
+      date = (date.toDateString()) + " " + (date.toTimeString().substr(0, 8));
+      console.log(date + ": ALLOW " + ip + " - Access granted for " + time + " seconds");
       if (error) {
         console.log("" + error);
       }
@@ -84,6 +88,10 @@ cmd = {
       delete allowed_ips[ip];
     }
     return execFile(params.cmd, ['deny', ip, params.arg], function(error, stdout, stderr) {
+      var date;
+      date = new Date();
+      date = (date.toDateString()) + " " + (date.toTimeString().substr(0, 8));
+      console.log(date + ": DENY " + ip + " - Access revoked");
       if (error) {
         return console.log("" + error);
       }
@@ -136,7 +144,6 @@ https.createServer(options, function(req, res) {
         result = true;
         params = config['passwords'][password];
         time = params['time'] != null ? params['time'] : config.general.time;
-        console.log(date + ": ALLOW " + ip + " - Access granted for " + time + " seconds");
         cmd.allow(ip, params);
       } else {
         result = false;

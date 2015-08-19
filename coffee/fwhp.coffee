@@ -66,12 +66,16 @@ cmd =
 		if time
 			# Schedule the 'deny' action
 			clearTimeout allowed_ips[ip] if allowed_ips[ip]?
-			allowed_ips[ip] = setTimeout @deny, time * 60000, [ip, params]
+			allowed_ips[ip] = setTimeout @deny, time * 1000, ip, params
 
 		# Execute the external command
 		execFile params.cmd, ['allow', ip, params.arg], (error, stdout, stderr) ->
-				console.log "#{error}" if error
-				console.log "#{stdout}" if stdout
+			# Report this attempt
+			date = new Date(); date = "#{date.toDateString()} #{date.toTimeString().substr(0,8)}"
+			console.log "#{date}: ALLOW #{ip} - Access granted for #{time} seconds"
+
+			console.log "#{error}" if error
+			console.log "#{stdout}" if stdout
 
 	# This method is optionally called some time after the 'allow'
 	deny: (ip, params) ->
@@ -80,7 +84,9 @@ cmd =
 			delete allowed_ips[ip]
 	
 		execFile params.cmd, ['deny', ip, params.arg], (error, stdout, stderr) ->
-				console.log "#{error}" if error
+			date = new Date(); date = "#{date.toDateString()} #{date.toTimeString().substr(0,8)}"
+			console.log "#{date}: DENY #{ip} - Access revoked"
+			console.log "#{error}" if error
 
 
 # The function to generate some HTML for our web server
@@ -166,9 +172,6 @@ https.createServer options, (req, res) ->
 				result = true 		# Correct!
 				params = config['passwords'][password]
 				time = if params['time']? then params['time'] else config.general.time
-
-				# Report this attempt
-				console.log "#{date}: ALLOW #{ip} - Access granted for #{time} seconds"
 
 				# Execute the firewall cmd:
 				cmd.allow(ip, params)
